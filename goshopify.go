@@ -47,6 +47,9 @@ type Client struct {
 	// A permanent access token
 	token string
 
+	// Last request headers
+	Header http.Header
+
 	// Services used for communicating with the API
 	Product          ProductService
 	CustomCollection CustomCollectionService
@@ -181,6 +184,9 @@ func (c *Client) Do(req *http.Request, v interface{}) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	// Save the response headers
+	c.Header = resp.Header
 
 	err = CheckResponseError(resp)
 	if err != nil {
