@@ -5,7 +5,9 @@ import (
 	"time"
 )
 
-const productsBasePath = "admin/products"
+const (
+	productsBasePath = "admin/products"
+)
 
 // ProductService is an interface for interfacing with the product endpoints
 // of the Shopify API.
@@ -14,7 +16,9 @@ type ProductService interface {
 	List(interface{}) ([]Product, error)
 	Count(interface{}) (int, error)
 	Get(int, interface{}) (*Product, error)
+	GetMetafields(int, interface{}) ([]Metafield, error)
 	Create(Product) (*Product, error)
+	CreateMetafield(int, Metafield) (*Metafield, error)
 	Update(Product) (*Product, error)
 	Delete(int) error
 }
@@ -28,23 +32,23 @@ type ProductServiceOp struct {
 // Product represents a Shopify product
 type Product struct {
 	ID                             int             `json:"id"`
-	Title                          string          `json:"title"`
-	BodyHTML                       string          `json:"body_html"`
-	Vendor                         string          `json:"vendor"`
-	ProductType                    string          `json:"product_type"`
+	Title                          string          `json:"title,omitempty"`
+	BodyHTML                       string          `json:"body_html,omitempty"`
+	Vendor                         string          `json:"vendor,omitempty"`
+	ProductType                    string          `json:"product_type,omitempty"`
 	Handle                         string          `json:"handle"`
 	CreatedAt                      *time.Time      `json:"created_at"`
 	UpdatedAt                      *time.Time      `json:"updated_at"`
-	PublishedAt                    *time.Time      `json:"published_at"`
-	PublishedScope                 string          `json:"published_scope"`
-	Tags                           string          `json:"tags"`
+	PublishedAt                    *time.Time      `json:"published_at,omitempty"`
+	PublishedScope                 string          `json:"published_scope,omitempty"`
+	Tags                           string          `json:"tags,omitempty"`
 	Options                        []ProductOption `json:"options"`
 	Variants                       []Variant       `json:"variants"`
 	Image                          Image           `json:"image"`
 	Images                         []Image         `json:"images"`
-	TemplateSuffix                 string          `json:"template_suffix"`
-	MetafieldsGlobalTitleTag       string          `json:"metafields_global_title_tag"`
-	MetafieldsGlobalDescriptionTag string          `json:"metafields_global_description_tag"`
+	TemplateSuffix                 string          `json:"template_suffix,omitempty"`
+	MetafieldsGlobalTitleTag       string          `json:"metafields_global_title_tag,omitempty"`
+	MetafieldsGlobalDescriptionTag string          `json:"metafields_global_description_tag,omitempty"`
 }
 
 // The options provided by Shopify
@@ -88,6 +92,14 @@ func (s *ProductServiceOp) Get(productID int, options interface{}) (*Product, er
 	return resource.Product, err
 }
 
+// Get product's metafields
+func (s *ProductServiceOp) GetMetafields(productID int, options interface{}) ([]Metafield, error) {
+	path := fmt.Sprintf("admin/products/%v/metafields.json", productID)
+	resource := new(MetafieldsResource)
+	err := s.client.Get(path, resource, options)
+	return resource.Metafields, err
+}
+
 // Create a new product
 func (s *ProductServiceOp) Create(product Product) (*Product, error) {
 	path := fmt.Sprintf("%s.json", productsBasePath)
@@ -95,6 +107,15 @@ func (s *ProductServiceOp) Create(product Product) (*Product, error) {
 	resource := new(ProductResource)
 	err := s.client.Post(path, wrappedData, resource)
 	return resource.Product, err
+}
+
+// Create a new Product Metafield
+func (s *ProductServiceOp) CreateMetafield(productID int, metafield Metafield) (*Metafield, error) {
+	path := fmt.Sprintf("admin/products/%v/metafields.json", productID)
+	wrappedData := MetafieldResource{Metafield: &metafield}
+	resource := new(MetafieldResource)
+	err := s.client.Post(path, wrappedData, resource)
+	return resource.Metafield, err
 }
 
 // Update an existing product
